@@ -1,6 +1,6 @@
-#Learn Java
+# Learn Java
 this git record my first spring project
 
-#资料
+# 资料
 
-#工具
+# 工具
