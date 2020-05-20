@@ -37,4 +37,13 @@ public class GithubUser {
     public String getBio() {
         return bio;
     }
+
+    @Override
+    public String toString() {
+        return "GithubUser{" +
+                "id=" + id +
+                ", bio='" + bio + '\'' +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }

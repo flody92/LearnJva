@@ -2,6 +2,8 @@ package com.learn.test.learn.controller;
 import com.learn.test.learn.dto.AccessTokenDTO;
 import com.learn.test.learn.dto.GithubUser;
 
+import com.learn.test.learn.mapper.UserMapper;
+import com.learn.test.learn.model.User;
 import com.learn.test.learn.provider.GithubProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.UUID;
 
 
 @Controller
@@ -27,6 +30,8 @@ public class AuthorizeController {
         @Value("${github.client.uri}")
         private String redirectUri;
 
+        @Autowired
+        private UserMapper userMapper;
 
 
         @GetMapping("/callback")
@@ -34,11 +39,21 @@ public class AuthorizeController {
                                @RequestParam(name = "state") String state,
                                HttpServletRequest request) {
             AccessTokenDTO accessTokenDTO = new AccessTokenDTO();
+            accessTokenDTO.setClient_id(clientId);
+            accessTokenDTO.setClient_secret(clientSecret);
+            accessTokenDTO.setCode(code);
+            accessTokenDTO.setRedirect_uri(redirectUri);
+            accessTokenDTO.setState(state);
             String accessToken = githubProvider.getAccessToken(accessTokenDTO);
             GithubUser githubUser = githubProvider.getUser(accessToken);
-            System.out.println(githubUser);
             if(githubUser!=null){
-
+                User user = new User();
+                user.setToken(UUID.randomUUID().toString());
+                user.setName(githubUser.getName());
+                user.setAccount_Id(String.valueOf(githubUser.getId()));
+                user.setGmtCreate(System.currentTimeMillis());
+                user.setGmtModified(user.getGmtCreate());
+                userMapper.insert(user);
                 request.getSession().setAttribute("githubUser",githubUser);
                 return "redirect:/";
                 //登录成功
