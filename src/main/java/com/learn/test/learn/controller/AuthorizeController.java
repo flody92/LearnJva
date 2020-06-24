@@ -5,6 +5,7 @@ import com.learn.test.learn.dto.GithubUser;
 import com.learn.test.learn.mapper.UserMapper;
 import com.learn.test.learn.model.User;
 import com.learn.test.learn.provider.GithubProvider;
+import com.learn.test.learn.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -35,6 +36,9 @@ public class AuthorizeController {
         @Autowired
         private UserMapper userMapper;
 
+        @Autowired
+        private UserService userService;
+
 
         @GetMapping("/callback")
         public String callback(@RequestParam(name = "code") String code,
@@ -54,10 +58,9 @@ public class AuthorizeController {
                 String token = UUID.randomUUID().toString();
                 user.setToken(token);
                 user.setName(githubUser.getName());
-                user.setAccount_Id(String.valueOf(githubUser.getId()));
-                user.setGmtCreate(System.currentTimeMillis());
-                user.setGmtModified(user.getGmtCreate());
-                userMapper.insert(user);
+                user.setAccountId(String.valueOf(githubUser.getId()));
+                user.setAvatarUrl(githubUser.getAvatarUrl());
+                userService.createOrUpdate(user);
                 response.addCookie(new Cookie("token",token));
                 return "redirect:/";
                 //登录成功
@@ -67,6 +70,18 @@ public class AuthorizeController {
                 return "redirect:/";
 
             }
+        }
+
+        @GetMapping("/logout")
+        public String logout(HttpServletRequest request,
+                             HttpServletResponse response){
+
+            request.getSession().removeAttribute("user");
+            Cookie cookie = new Cookie("token",null);
+            cookie.setMaxAge(0);
+            response.addCookie(cookie);
+            return "redirect:/";
+
         }
 
 
