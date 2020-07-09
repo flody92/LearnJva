@@ -2,6 +2,7 @@ package com.learn.test.learn.service;
 
 import com.learn.test.learn.dto.PaginationDTO;
 import com.learn.test.learn.dto.QuestionDTO;
+import com.learn.test.learn.mapper.QuestionExMapper;
 import com.learn.test.learn.mapper.QuestionMapper;
 import com.learn.test.learn.mapper.UserMapper;
 import com.learn.test.learn.model.Question;
@@ -23,6 +24,9 @@ public class QuestionService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private QuestionExMapper questionExMapper;
 
     public PaginationDTO list(Integer page, Integer size) {
 
@@ -120,7 +124,11 @@ public class QuestionService {
         if(question.getId()==null){
             question.setGmtCreate(System.currentTimeMillis());
             question.setGmtModified(question.getGmtCreate());
+            question.setViewCount(0);
+            question.setLikeCount(0);
+            question.setCommentCount(0);
             questionMapper.insert(question);
+
             //创建问题
         }else {
             Question updataQuestion = new Question();
@@ -134,5 +142,12 @@ public class QuestionService {
             questionMapper.updateByExampleSelective(updataQuestion, example);
             //更新问题
         }
+    }
+
+    public void incView(Integer id) {
+        Question question = new Question();
+        question.setId(id);
+        question.setViewCount(1);
+        questionExMapper.incView(question);
     }
 }
