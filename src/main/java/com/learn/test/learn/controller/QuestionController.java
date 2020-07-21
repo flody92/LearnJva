@@ -1,6 +1,7 @@
 package com.learn.test.learn.controller;
 
 
+import com.learn.test.learn.dto.CommentDTO;
 import com.learn.test.learn.dto.QuestionDTO;
 
 import com.learn.test.learn.service.QuestionService;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+
+import java.util.List;
 
 @Controller
 public class QuestionController {
@@ -20,9 +23,12 @@ public class QuestionController {
     public String question(@PathVariable(name="id") Integer id,
                            Model model){
         QuestionDTO questionDTO = questionService.getById(id);
+        List<CommentDTO> comments = questionService.listByQuestionId(id);
+
         //累加阅读数
         questionService.incView(id);
         model.addAttribute("question",  questionDTO);
+        model.addAttribute("comments",comments);
         return "question";
     }
 }

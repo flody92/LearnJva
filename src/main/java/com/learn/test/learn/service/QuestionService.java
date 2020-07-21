@@ -1,13 +1,16 @@
 package com.learn.test.learn.service;
 
+import com.learn.test.learn.dto.CommentDTO;
 import com.learn.test.learn.dto.PaginationDTO;
 import com.learn.test.learn.dto.QuestionDTO;
+import com.learn.test.learn.enums.CommentTypeEnum;
+import com.learn.test.learn.exception.CustomizeErrorCode;
+import com.learn.test.learn.exception.CustomizeException;
+import com.learn.test.learn.mapper.CommentMapper;
 import com.learn.test.learn.mapper.QuestionExMapper;
 import com.learn.test.learn.mapper.QuestionMapper;
 import com.learn.test.learn.mapper.UserMapper;
-import com.learn.test.learn.model.Question;
-import com.learn.test.learn.model.QuestionExample;
-import com.learn.test.learn.model.User;
+import com.learn.test.learn.model.*;
 import org.apache.ibatis.session.RowBounds;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +18,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Service
 public class QuestionService {
@@ -27,6 +34,9 @@ public class QuestionService {
 
     @Autowired
     private QuestionExMapper questionExMapper;
+
+    @Autowired
+    private CommentMapper commentMapper;
 
     public PaginationDTO list(Integer page, Integer size) {
 
@@ -113,6 +123,9 @@ public class QuestionService {
 
     public QuestionDTO getById(Integer id) {
         Question question = questionMapper.selectByPrimaryKey(id);
+        if (question ==  null){
+            throw new CustomizeException(CustomizeErrorCode.QUESTION_NOT_FOUND);
+        }
         QuestionDTO questionDTO = new QuestionDTO();
         BeanUtils.copyProperties(question,questionDTO);
         User user = userMapper.selectByPrimaryKey(question.getCreator());
@@ -139,7 +152,10 @@ public class QuestionService {
             QuestionExample example = new QuestionExample();
             example.createCriteria()
                     .andIdEqualTo(question.getId());
-            questionMapper.updateByExampleSelective(updataQuestion, example);
+            int updated = questionMapper.updateByExampleSelective(updataQuestion, example);
+            if (updated != 1){
+                throw new CustomizeException(CustomizeErrorCode.QUESTION_NOT_FOUND);
+            }
             //更新问题
         }
     }
@@ -149,5 +165,39 @@ public class QuestionService {
         question.setId(id);
         question.setViewCount(1);
         questionExMapper.incView(question);
+    }
+
+    public List<CommentDTO> listByQuestionId(Integer id) {
+        CommentExample commentExample = new CommentExample();
+        commentExample.createCriteria()
+                .andParentIdEqualTo(id)
+                .andTypeEqualTo(CommentTypeEnum.QUESTION.getType());
+        commentExample.setOrderByClause("gmt_create desc");
+        List<Comment> comments = commentMapper.selectByExample(commentExample);
+
+        if (comments.size() == 0){
+            return new ArrayList<>();
+        }
+        //获取去重的评论人
+        Set<Integer> commentators = comments.stream().map(comment -> comment.getCommentator()).collect(Collectors.toSet());
+        List<Integer> userIds = new ArrayList<>();
+        userIds.addAll(commentators);
+
+        //获取评论人并转为Map
+        UserExample userExample = new UserExample();
+        userExample.createCriteria()
+                .andIdIn(userIds);
+        List<User> users = userMapper.selectByExample(userExample);
+        Map<Integer,User> userMap = users.stream().collect(Collectors.toMap(user -> user.getId(), user -> user));
+
+        //转comment为commentDTO
+        List<CommentDTO> commentDTOS = comments.stream().map(comment -> {
+            CommentDTO commentDTO = new CommentDTO();
+            BeanUtils.copyProperties(comment,commentDTO);
+            commentDTO.setUser(userMap.get(comment.getCommentator()));
+            return commentDTO;
+        }).collect(Collectors.toList());
+
+        return commentDTOS;
     }
 }
