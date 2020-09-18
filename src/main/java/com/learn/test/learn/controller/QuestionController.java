@@ -4,6 +4,8 @@ package com.learn.test.learn.controller;
 import com.learn.test.learn.dto.CommentDTO;
 import com.learn.test.learn.dto.QuestionDTO;
 
+import com.learn.test.learn.enums.CommentTypeEnum;
+import com.learn.test.learn.service.CommentService;
 import com.learn.test.learn.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,11 +21,14 @@ public class QuestionController {
     @Autowired
     private QuestionService questionService;
 
+    @Autowired
+    private CommentService commentService;
+
     @GetMapping("/question/{id}")
     public String question(@PathVariable(name="id") Integer id,
                            Model model){
         QuestionDTO questionDTO = questionService.getById(id);
-        List<CommentDTO> comments = questionService.listByQuestionId(id);
+        List<CommentDTO> comments = commentService.listByTargetId(id, CommentTypeEnum.QUESTION);
 
         //累加阅读数
         questionService.incView(id);

@@ -5,10 +5,10 @@ import lombok.Data;
 
 @Data
 public class CommentDTO {
-    private int id;
-    private int parentId;
+    private Integer id;
+    private Integer parentId;
     private Integer type;
-    private int commmentator;
+    private Integer commmentator;
     private Long gmtCreate;
     private Long gmtModified;
     private long likeCount;
